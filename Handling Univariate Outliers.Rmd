@@ -1,0 +1,135 @@
+---
+title: "Mendeteksi Outliers Univariat"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Apa itu Outliers Univariat?
+
+Dalam mengeksplorasi data, seringkali dijumpai beberapa titik amatan yang berada jauh dari pola data pada umumnya yang mungkin berpengaruh besar terhadap proses analisis data. Titik-titik data tersebut dinamakan pencilan / nilai ekstrim (*outliers*). Pencilan yang terdapat pada satu variabel dinamakan pencilan univariat atau **univariate outliers**
+
+Keberadaan *outliers* dapat menganggu proses analisis data, contohnya dalam analisis statistika despkriptif, kita menghitung rata-rata (*mean*) sebagai salah satu ukuran pemusatan data. Namun, data yang memiliki *outliers* menunjukkan nilai mean yang berbeda dengan data yang bebas dari *outliers*. **Perbedaan tersebut akan dibuktikan dalam artikel ini**
+
+```{r echo=FALSE, results='hide'}
+library(readxl)
+setwd("~/R")
+data <- read_excel('dtuts.xlsx')
+```
+
+## Eksplorasi Data
+
+Berikut tampilan dataset yang digunakan :
+```{r}
+head(data)
+```
+
+```{r echo=FALSE}
+data$NAMAKAB <- as.factor(data$NAMAKAB)
+data$NAMAKEC <- as.factor(data$NAMAKEC)
+data$KAB <- as.factor(data$KAB)
+data$KEC <- as.factor(data$KEC)
+```
+
+Untuk menentukan variabel yang akan dideteksi *outliers* nya, dilakukan **eksplorasi** terlebih dahulu untuk melihat tipe data tiap variabel karena deteksi *outliers* hanya dapat digunakan untuk data dengan tipe numerik
+
+Dalam hal ini, gunakan fungsi *str()* dan *summary()*
+
+```{r}
+str(data)
+summary(data)
+```
+
+Berdasarkan *output* di atas, diperoleh bahwa variabel numerik dalam data hanya berjumlah 3 yakni variabel **FOOD**, **NONFOOD**, dan **EXP_CAP**. Dari ketiga variabel tersebut, dibuat **boxplot** untuk melihat variabel apa saja yang memiliki *outliers* untuk selanjutnya dapat ditangani dengan metode **Inter Quartile Range**
+
+```{r}
+par(mfrow=c(1,3))
+boxplot(data$FOOD)
+boxplot(data$NONFOOD)
+boxplot(data$EXP_CAP)
+```
+
+Berdasarkan boxplot di atas, terlihat ada titik-titik amatan yang tersebar di atas boxplot, hal ini berarti ketiga variabel tersebut sama-sama memiliki masalah **pencilan (*outliers* )atas**.
+
+Misal dipilih variabel **EXP_CAP** untuk penanganan outliers kali ini, maka perlu didefinisikan terlebih dahulu nama objek yang mewakili variabel **EXP_CAP** pada data, yaitu **periksa**. Selanjutnya kita akan mencari ukuran statistik pada variabel **EXP_CAP** yang masih mengandung *outliers*
+
+```{r}
+periksa = data$EXP_CAP
+summary(periksa)
+```
+
+## Penanganan Outlier
+
+Metode yang akan dibahas pada artikel kali ini adalah metode **Inter Quartile Range**. Metode ini mendeteksi *outliers* sebagai amatan yang berada di luar *range* atau batasan tertentu. Seperti batasan-batasan lainnya, IQR memiliki batas bawah dan batas atas sebagai kriteria dalam mengidentifikasi data yang termasuk *outliers* atau yang bukan
+
+Metode IQR mendefinisikan batas atas sebagai
+$$U_L = (Q3+1.5*IQR)$$
+
+Sedangkan untuk batas bawah
+$$L_L = (Q1-1.5*IQR)$$
+
+Titik-titik data yang lebih besar dari *Upper Limit* maupun yang lebih kecil dari *Lower Limit* disebut sebagai *outliers* sehingga perlu dihilangkan untuk menghindari bias pada analisis statistik yang hendak dilakukan
+
+```{r}
+batas_atas = quantile(periksa, probs = 0.75) + 1.5*IQR(periksa)
+periksa[periksa > batas_atas]
+periksa1 = periksa[periksa<batas_atas]
+```
+
+```{r echo=FALSE, results='hide'}
+batas_atas = quantile(periksa, probs = 0.75) + 1.5*IQR(periksa)
+periksa[periksa > batas_atas]
+periksa1 = periksa[periksa<batas_atas]
+
+batas_atas2 = quantile(periksa1, probs = 0.75) + 1.5*IQR(periksa1)
+periksa1[periksa1 > batas_atas2]
+periksa1 = periksa1[periksa1<batas_atas2]
+
+batas_atas3 = quantile(periksa1, probs = 0.75) + 1.5*IQR(periksa1)
+periksa1[periksa1 > batas_atas3]
+periksa1 = periksa1[periksa1<batas_atas3]
+```
+
+Setelah dilakukan deteksi terhadap pencilan (*outliers*) atas ditemukan 95 data dalam variabel **EXP_CAP** yang merupakan *outliers*. Karena keberadaannya dapat menganggu, akan kita hilangkan *outliers* tersebut dengan hanya menampilkan data yang lebih kecil dari *Upper Limit*.
+
+Selanjutnya, dilakukan deteksi terhadap pencilan (*outliers*) bawah dengan syntax berikut :
+
+```{r}
+batas_bawah = quantile(periksa1, probs = 0.25) - 1.5*IQR(periksa1)
+periksa1[periksa1 < batas_bawah]
+periksa_tanpa_outlier = periksa1[periksa1>batas_bawah]
+```
+
+Hasil di atas menunjukkan bahwa variabel **EXP_CAP** tidak memiliki pencilan (*outliers*) bawah. Hal ini sejalan dengan apa yang telah kita lihat pada boxplot bahwa tidak ada nilai-nilai ekstrim yang berada di bawah boxplot
+
+Setelah menghilangkan *outliers*, kita dapat menyimpan variabel **EXP_CAP** yang sudah bebas dari *outliers* sebagai **periksa_tanpa_outliers**. Setelah itu dapat dibuat ringkasan statistik dengan fungsi *summary()* juga boxplot-nya untuk memeriksa apakah *outliers* benar-benar sudah tidak ada
+```{r}
+summary(periksa_tanpa_outlier)
+```
+
+
+```{r}
+boxplot(periksa_tanpa_outlier)
+```
+
+Berdasarkan boxplot di atas, telihat bahwa hasil pembersihan *outliers* dengan
+metode IQR ini telah menghilangkan titik-titik amatan yang sebelumnya terdapat di atas boxplot. Kini, boxplot dari nilai-nilai amatan pada variabel **EXP_CAP** telah bebas dari *outliers*
+
+## Perbandingan Ukuran Statistik
+
+Setelah data dibersihkan dari *outliers*, tentunya kita ingin mengetahui seberapa besar pengaruh *outliers* dalam menghitung ukuran statistik pada data yang masih memiliki masih terdapat outliers dengan data tanpa outliers dengan data tanpa *outliers*
+
+Untuk membandingkan ringkasan statistik dari kedua data tersebut, kita bisa membuat tabel dataframe sederhana yang terdiri atas nama-nama ukuran statistik yang digunakan dan ringkasan statistik dari kedua data yang telah diperoleh dengan fungsi *summary()*
+
+
+```{r}
+dengan_outliers <- as.vector(summary(periksa))
+tanpa_outliers <- as.vector(summary(periksa_tanpa_outlier))
+ukuran_stat <- c('min','Q1','Median','Mean','Q3','Max')
+compare <- data.frame(ukuran_stat, dengan_outliers, tanpa_outliers)
+compare
+```
+
+Dari tabel di atas terlihat jelas bahwa keberadaan *outliers* mempengaruhi perbedaan nilai ukuran statistik dari data yang sebenarnya bersih dari *outliers*. Bahkan nilai *mean* menunjukkan perbedaan yang sangat menonjol yang mana jika hal ini tidak diperhatikan, terdapat kemungkinan adanya bias dalam pengambilan keputusan. Selain *mean*, nilai maksimum juga menunjukkan perbedaan yang sangat ekstrim, hal ini tidak terlalu mengejutkan karena data yang ditangani kali ini hanya memiliki pencilan (*outliers*) atas maka untuk nilai minimum tidak ditemukan adanya perbedaan
