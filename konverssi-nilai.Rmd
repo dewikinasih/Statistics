@@ -1,0 +1,90 @@
+Konversi Nilai Angka Menjadi Predikat Huruf dengan R
+================
+
+Pada artikel ini, akan dibahas cara mengkonversi nilai dengan
+menggunakan fungsi *looping* dan *conditional ifelse* di R
+
+Menjelang akhir semester, salah satu tugas dosen dalam menentukan nilai
+akhir mahasiswa dalam suatu mata kuliah adalah mengkonversi nilai angka
+yang telah dihitung dengan bobot setiap komponen penilaian menjadi
+perdikat huruf A,B,C,D,dst…Predikat nilai yang berupa huruf inilah yang
+dapat diinformasikan kepada mahasiswa sebagai cerminan hasil belajar
+mereka dalam satu semester
+
+## Contoh Data
+
+Sebelum memulai konversi, kita memerlukan data nilai mahasiswa dari
+beberapa komponen penilaian seperti Tugas, UTS, dan UAS seperti tabel
+berikut.
+
+![](nilai.png)
+
+Setelah itu dapat dibuat sebuah *dataframe* dengan nama **data** yang
+isi dari *dataframe* tersebut sama dengan tabel di atas
+
+``` r
+nama <- c('Rama', 'Jaya','Dova', 'Deta')
+uts <- c(80,70,75,88)
+uas <- c(40,55,70,80)
+tugas1 <- c(0,80,85,75)
+tugas2 <- c(75,90,0,65)
+data <- data.frame(nama, uts,uas,tugas1,tugas2)
+data
+```
+
+    ##   nama uts uas tugas1 tugas2
+    ## 1 Rama  80  40      0     75
+    ## 2 Jaya  70  55     80     90
+    ## 3 Dova  75  70     85      0
+    ## 4 Deta  88  80     75     65
+
+Selanjutnya misal ditetapkan bobot untuk UAS,UTS, dan TUGAS
+masing-masing sebesar 45%, 35%, dan 20%. Maka nilai akhir mahasiswa
+dapat dihitung dengan rumus
+
+$$𝑁𝐴 = 0.45 ∗ 𝑈𝐴𝑆 + 0.35 ∗ 𝑈𝑇𝑆 + 0.2 ∗ (𝑇𝑈𝐺𝐴𝑆1 + 𝑇𝑈𝐺𝐴𝑆2)$$ Berdasarkan
+nilai akhir tersebut, ditetapkan kriteria untuk setiap predikat seperti
+berikut
+
+![](kriteria.png)
+
+## Konversi Nilai
+
+Seperti yang sudah dijelaskan sebelunya, konversi kali ini menggunakan
+fungsi *looping* dan *conditional ifelse*. **Looping for** digunakan
+untuk memproses konversi baris per baris. Dan **conditional ifelse**
+untuk mengubah bentuk nilai akhir menjadi predikat sesuai kriteria yang
+telah ditetapkan sebelumnya
+
+``` r
+for(i in 1:nrow(data)){
+  nilai.akhir <- (0.45*data[i,3]) + (0.35*data[i,2]) + (0.2*(data[i,4]+data[i,5]))
+  if(nilai.akhir >= 80){
+    konversi <- 'A'
+  }else if (nilai.akhir>= 65 && nilai.akhir< 80){
+    konversi <-'B'
+  }else if(nilai.akhir>= 50 && nilai.akhir< 65){
+    konversi <- 'C'
+  }else{
+    konversi <- 'D'
+  }
+  print(paste('nilai akhir', data[i,1], 'adalah', nilai.akhir,'atau', konversi))
+}
+```
+
+    ## [1] "nilai akhir Rama adalah 61 atau C"
+    ## [1] "nilai akhir Jaya adalah 83.25 atau A"
+    ## [1] "nilai akhir Dova adalah 74.75 atau B"
+    ## [1] "nilai akhir Deta adalah 94.8 atau A"
+
+Sebelum dikonversi, perlu dihitung terlebih dahulu nilai akhir dengan
+rumus di atas. Perlu diketahui bahwa *i* dalam *looping for* adalah
+**nomor baris**, jadi untuk menghitung nilai akhir kita menggunakan
+nilai pada dataframe **data** di baris ke i kolom 3 untuk nilai UAS,
+baris i kolom 2 untuk nilai UTS, dan baris i kolom 3 dan 4 untuk TUGAS1
+dan TUGAS2
+
+Setelah diperoleh nilai akhir, gunakan fungsi *conditional ifelse* untuk
+mengubah bentuk data menjadi predikat sesuai kriteria. Selanjutnya dapat
+ditampilkan nilai akhir yang berupa angka maupun predikat huruf untuk
+masing-masing nama mahasiswa
